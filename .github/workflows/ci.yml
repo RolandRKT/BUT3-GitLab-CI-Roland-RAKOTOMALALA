@@ -30,4 +30,4 @@ jobs:
       env:
         PYTHONPATH: ./src
       run: |
-        pytest --cov --cov-report=term-missing tests
+        pytest --cov --cov-report=term-missing --cov-config=.coveragerc
