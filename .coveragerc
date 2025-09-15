@@ -1,0 +1,12 @@
+[run]
+# Limiter la mesure de la couverture au code source
+source = src
+
+[report]
+# Exclure les autres fichiers pour garde que src
+omit =
+    */__init__.py
+    */tests/*
+    setup.py
+
+show_missing = true

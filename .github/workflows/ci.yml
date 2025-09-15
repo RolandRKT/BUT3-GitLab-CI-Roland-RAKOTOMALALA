@@ -30,4 +30,4 @@ jobs:
       env:
         PYTHONPATH: ./src
       run: |
-        pytest --cov=src tests
+        pytest --cov-config=.coveragerc --cov=tests
