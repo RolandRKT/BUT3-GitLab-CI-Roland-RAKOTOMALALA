@@ -1,8 +1,8 @@
 """_summary_
 """
 
-from src.greeting.main import greet
-from src.greeting.utils import add
+from greeting.main import greet
+from greeting.utils import add
 
 
 def test_greet():
