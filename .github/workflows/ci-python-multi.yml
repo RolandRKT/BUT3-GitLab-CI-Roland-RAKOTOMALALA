@@ -55,3 +55,26 @@ jobs:
           tags: |
             ${{ secrets.ADRESSE }}/rakotomalala-roland-backend:latest
             ${{ secrets.ADRESSE }}/rakotomalala-roland-backend:${{ github.sha }}
+
+  deploy-dev:
+    needs: [build-frontend, build-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Run deploy playbook
+        run: |
+          ansible-playbook deploy.yml \
+            -i "serveur," \
+            -e "image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }}"

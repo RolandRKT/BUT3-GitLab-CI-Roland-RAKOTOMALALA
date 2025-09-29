@@ -1,0 +1,37 @@
+- hosts: serveur
+  vars:
+    app_directory: /home/deploy/roland-rakotomalala
+    image_tag: "{{ image_tag }}"
+    registry_password: "{{ registry_password }}"
+  tasks:
+    - name: Create app directory
+      file:
+        path: "{{ app_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Login to Docker Registry
+      community.docker.docker_login:
+        registry_url: docker.iut.arcanit.io
+        username: admin
+        password: "{{ registry_password }}"
+
+    - name: Upload docker-compose.yml
+      copy:
+        src: docker-compose.yml
+        dest: "{{ app_directory }}/docker-compose.yml"
+
+    - name: Upload backend.env
+      copy:
+        src: backend.env
+        dest: "{{ app_directory }}/backend.env"
+
+    - name: Pull Docker images
+      command: docker compose pull
+      args:
+        chdir: "{{ app_directory }}"
+
+    - name: Start containers
+      command: docker compose up -d --remove-orphans
+      args:
+        chdir: "{{ app_directory }}"

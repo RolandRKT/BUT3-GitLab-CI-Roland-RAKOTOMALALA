@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  roland-rakotomalala-frontend:
+    container_name: roland-rakotomalala-frontend
+    image: docker.iut.arcanit.io/rakotomalala-roland-frontend:${IMAGE_TAG}  # IMAGE_TAG = sha256 du commit
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.rule=Host(`dev-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.entrypoints=https"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.tls=true"
+      - "traefik.http.services.dev-roland-rakotomalala-frontend.loadbalancer.server.port=80"
+
+  roland-rakotomalala-backend:
+    container_name: roland-rakotomalala-backend
+    image: docker.iut.arcanit.io/rakotomalala-roland-backend:${IMAGE_TAG}  # IMAGE_TAG = sha256 du commit
+    env_file:
+      - backend.env
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.rule=Host(`dev-api-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.entrypoints=https"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.tls=true"
+      - "traefik.http.services.dev-api-roland-rakotomalala.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true

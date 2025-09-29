@@ -1,0 +1,7 @@
+app_directory: /home/student/apps/rakotomalala_roland-dev
+
+registry: docker.iut.arcanit.io
+registry_login: admin
+registry_password: secret
+
+image_tag: latest
