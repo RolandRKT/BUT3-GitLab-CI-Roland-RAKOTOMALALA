@@ -9,7 +9,6 @@ jobs:
   build-frontend:
     name: Build & Push Frontend
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +33,6 @@ jobs:
   build-backend:
     name: Build & Push Backend
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,10 +71,13 @@ jobs:
           sudo apt update
           sudo apt install -y ansible
 
+      - name: Add dev21 to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 62221 dev21.iut.arcanit.io >> ~/.ssh/known_hosts
+
       - name: Run deploy playbook
         run: |
           cd ansible
           ansible-playbook -i inventory.ini deploy.yml \
             --extra-vars "image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }}"
-
-
