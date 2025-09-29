@@ -12,8 +12,8 @@
 
     - name: Login to Docker Registry
       community.docker.docker_login:
-        registry_url: docker.iut.arcanit.io
-        username: admin
+        registry: docker.iut.arcanit.io
+        registry_login: admin
         password: "{{ registry_password }}"
 
     - name: Upload docker-compose.yml
