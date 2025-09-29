@@ -1,8 +1,4 @@
 - hosts: dev21
-  vars:
-    app_directory: "/home/student/apps/rakotomalala_roland-dev"
-    image_tag: "{{ image_tag }}"
-    registry_password: "{{ registry_password }}"
   tasks:
     - name: Create app directory
       file:
@@ -12,8 +8,8 @@
 
     - name: Login to Docker Registry
       community.docker.docker_login:
-        registry: docker.iut.arcanit.io
-        registry_login: admin
+        registry_url: "{{ registry }}"
+        username: "{{ registry_login }}"
         password: "{{ registry_password }}"
 
     - name: Upload docker-compose.yml
