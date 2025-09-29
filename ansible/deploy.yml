@@ -1,6 +1,6 @@
 - hosts: dev21
   vars:
-    app_directory: "{{ app_directory }}"
+    app_directory: "/home/student/apps/rakotomalala_roland-dev"
     image_tag: "{{ image_tag }}"
     registry_password: "{{ registry_password }}"
   tasks:
