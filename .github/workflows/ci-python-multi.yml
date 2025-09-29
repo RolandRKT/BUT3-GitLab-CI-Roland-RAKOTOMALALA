@@ -75,7 +75,7 @@ jobs:
 
       - name: Run deploy playbook
         run: |
-          ansible-playbook ansible/deploy.yml \
-            -i "serveur," \
-            -e "image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }}"
+          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+            --extra-vars "image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }}"
+
 
