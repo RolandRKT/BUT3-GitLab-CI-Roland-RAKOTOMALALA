@@ -1,4 +1,4 @@
-- hosts: serveur
+- hosts: dev21
   vars:
     app_directory: /home/deploy/roland-rakotomalala
     image_tag: "{{ image_tag }}"
