@@ -26,8 +26,12 @@
       command: docker compose pull
       args:
         chdir: "{{ app_directory }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
 
     - name: Start containers
       command: docker compose up -d --remove-orphans
       args:
         chdir: "{{ app_directory }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
