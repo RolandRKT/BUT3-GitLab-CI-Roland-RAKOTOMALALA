@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  roland-rakotomalala-frontend:
+    image: {{ registry }}/rakotomalala-roland-frontend:{{ image_tag }}
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.rule=Host(`{{ domain_prefix }}roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.entrypoints=https"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.tls=true"
+      - "traefik.http.services.{{ env_prefix }}roland-rakotomalala-frontend.loadbalancer.server.port=80"
+
+  roland-rakotomalala-backend:
+    image: {{ registry }}/rakotomalala-roland-backend:{{ image_tag }}
+    env_file: backend.env
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.rule=Host(`{{ domain_prefix }}api-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.entrypoints=https"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.tls=true"
+      - "traefik.http.services.{{ env_prefix }}api-roland-rakotomalala.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true

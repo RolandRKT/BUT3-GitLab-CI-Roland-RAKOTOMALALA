@@ -1,37 +1,20 @@
-- hosts: dev21
+- name: Déployer l'application selon l'environnement
+  hosts: apps
+  vars:
+    env_prefix: "{{ 'dev-' if env=='dev' else ('test-' if env=='test' else '') }}"
+    domain_prefix: "{{ env_prefix }}"
   tasks:
-    - name: Create app directory
-      file:
-        path: "{{ app_directory }}"
-        state: directory
-        mode: '0755'
-
-    - name: Login to Docker Registry
-      community.docker.docker_login:
-        registry_url: "{{ registry }}"
-        username: "{{ registry_login }}"
-        password: "{{ registry_password }}"
-
-    - name: Upload docker-compose.yml
-      copy:
-        src: docker-compose.yml
-        dest: "{{ app_directory }}/docker-compose.yml"
-
-    - name: Upload backend.env
-      copy:
-        src: backend.env
+    - name: Générer backend.env depuis le template
+      template:
+        src: templates/backend.env.j2
         dest: "{{ app_directory }}/backend.env"
 
-    - name: Pull Docker images
-      command: docker compose pull
-      args:
-        chdir: "{{ app_directory }}"
-      environment:
-        IMAGE_TAG: "{{ image_tag }}"
+    - name: Générer docker-compose.yml depuis le template
+      template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ app_directory }}/docker-compose.yml"
 
-    - name: Start containers
-      command: docker compose up -d --remove-orphans
-      args:
-        chdir: "{{ app_directory }}"
-      environment:
-        IMAGE_TAG: "{{ image_tag }}"
+    - name: Lancer docker-compose
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: present

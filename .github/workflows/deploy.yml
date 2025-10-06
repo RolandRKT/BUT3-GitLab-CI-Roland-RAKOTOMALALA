@@ -1,0 +1,33 @@
+name: Deploy App
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      host:
+        required: true
+        type: string
+      app_directory:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - run: |
+          sudo apt update && sudo apt install -y ansible
+      - run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 62221 ${{ inputs.host }} >> ~/.ssh/known_hosts
+      - run: |
+          cd ansible
+          ansible-playbook -i inventory.ini deploy.yml \
+            --extra-vars "env=${{ inputs.env }} image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }} app_directory=${{ inputs.app_directory }}"

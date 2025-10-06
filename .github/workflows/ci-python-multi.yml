@@ -12,14 +12,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Log in to Docker Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ADRESSE }}
           username: ${{ secrets.LOGIN }}
           password: ${{ secrets.PASSWORD }}
-
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
         with:
@@ -36,14 +34,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Log in to Docker Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ADRESSE }}
           username: ${{ secrets.LOGIN }}
           password: ${{ secrets.PASSWORD }}
-
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v6
         with:
@@ -56,28 +52,24 @@ jobs:
 
   deploy-dev:
     needs: [build-frontend, build-backend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: dev
+      host: dev21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland-dev
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+  deploy-test:
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: test
+      host: test21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland-test
 
-      - name: Install Ansible
-        run: |
-          sudo apt update
-          sudo apt install -y ansible
-
-      - name: Add dev21 to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p 62221 dev21.iut.arcanit.io >> ~/.ssh/known_hosts
-
-      - name: Run deploy playbook
-        run: |
-          cd ansible
-          ansible-playbook -i inventory.ini deploy.yml \
-            --extra-vars "image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }}"
+  deploy-prod:
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: prod
+      host: prod21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland
