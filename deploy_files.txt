@@ -35,15 +35,33 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y ansible
 
+      - name: Disable SSH host key checking for Ansible
+        run: |
+          echo "[defaults]" > ansible.cfg
+          echo "host_key_checking = False" >> ansible.cfg
+          cat ansible.cfg
+
       - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p 62221 ${{ inputs.host }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p 62221 -H ${{ inputs.host }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -p 62221 student@${{ inputs.host }} "echo SSH_OK"
+
+      - name: Create dynamic inventory
+        run: |
+          cat > ansible/inventory.ini << EOF[apps]
+          target_host ansible_host=${{ inputs.host }} ansible_port=${{ inputs.ssh_port }} ansible_user=student ansible_become=no
+          EOF
 
       - name: Run Ansible Playbook
         run: |
           cd ansible
-          ansible-playbook -i inventory.ini deploy.yml --extra-vars "env=${{ inputs.env }} \
+          ansible-playbook -i inventory.ini deploy.yml \
+            --extra-vars "env=${{ inputs.env }} \
                           image_tag=${{ github.sha }} \
                           registry=${{ secrets.ADRESSE }} \
                           registry_password=${{ secrets.PASSWORD }} \
