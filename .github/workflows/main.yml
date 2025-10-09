@@ -105,7 +105,3 @@ jobs:
       SSH_KEY: ${{ secrets.SSH_KEY }}
       PASSWORD: ${{ secrets.PASSWORD }}
       ADRESSE: ${{ secrets.ADRESSE }}
-    env:
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      PRENOM: roland
-      NOM: rakotomalala
