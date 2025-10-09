@@ -57,7 +57,7 @@ jobs:
       env: dev
       host: dev21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-dev
-      ssh_key_secret: ${{ secrets.SSH_KEY }}
+      ssh_key_secret: SSH_KEY
 
   deploy-test:
     needs: [build-frontend, build-backend]
@@ -66,7 +66,7 @@ jobs:
       env: test
       host: test21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-test
-      ssh_key_secret: ${{ secrets.SSH_KEY }}
+      ssh_key_secret: SSH_KEY
 
   deploy-prod:
     needs: [build-frontend, build-backend]
@@ -75,4 +75,4 @@ jobs:
       env: prod
       host: prod21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland
-      ssh_key_secret: ${{ secrets.SSH_KEY }}
+      ssh_key_secret: SSH_KEY

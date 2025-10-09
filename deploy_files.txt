@@ -12,6 +12,9 @@ on:
       app_directory:
         required: true
         type: string
+      ssh_key_secret:
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -20,8 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
+          ssh-private-key: ${{ secrets[inputs.ssh_key_secret] }}
       - run: |
           sudo apt update && sudo apt install -y ansible
       - run: |
@@ -90,6 +92,7 @@ jobs:
       env: dev
       host: dev21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-dev
+      ssh_key_secret: SSH_KEY
 
   deploy-test:
     needs: [build-frontend, build-backend]
@@ -98,6 +101,7 @@ jobs:
       env: test
       host: test21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-test
+      ssh_key_secret: SSH_KEY
 
   deploy-prod:
     needs: [build-frontend, build-backend]
@@ -106,7 +110,7 @@ jobs:
       env: prod
       host: prod21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland
-- name: Déployer l'application selon l'environnement
+      ssh_key_secret: SSH_KEY- name: Déployer l'application selon l'environnement
   hosts: apps
   vars:
     env_prefix: "{{ 'dev-' if env=='dev' else ('test-' if env=='test' else '') }}"
