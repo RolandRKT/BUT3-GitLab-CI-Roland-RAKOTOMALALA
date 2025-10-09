@@ -18,7 +18,6 @@ jobs:
   deploy-dev:
     needs: [build-frontend, build-backend]
     uses: ./.github/workflows/deploy.yml
-    environment: dev
     with:
       env: dev
       host: dev21.iut.arcanit.io
@@ -31,7 +30,6 @@ jobs:
   deploy-test:
     needs: [build-frontend, build-backend]
     uses: ./.github/workflows/deploy.yml
-    environment: test
     with:
       env: test
       host: test21.iut.arcanit.io
@@ -44,7 +42,6 @@ jobs:
   deploy-prod:
     needs: [build-frontend, build-backend]
     uses: ./.github/workflows/deploy.yml
-    environment: production    # 👈 pour activer l’approbation manuelle
     with:
       env: prod
       host: prod21.iut.arcanit.io
@@ -58,7 +55,6 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [build-frontend, build-backend]
     uses: ./.github/workflows/deploy.yml
-    environment: preview
     with:
       env: pr
       host: dev21.iut.arcanit.io
