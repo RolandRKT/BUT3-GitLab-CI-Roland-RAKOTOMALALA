@@ -85,3 +85,16 @@ jobs:
       SSH_KEY: ${{ secrets.SSH_KEY }}
       PASSWORD: ${{ secrets.PASSWORD }}
       ADRESSE: ${{ secrets.ADRESSE }}
+
+  deploy-pr:
+    if: github.event_name == 'pull_request'
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: pr
+      host: dev21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland-pr-${{ github.event.pull_request.number }}
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      ADRESSE: ${{ secrets.ADRESSE }}
