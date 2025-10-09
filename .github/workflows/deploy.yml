@@ -35,20 +35,21 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y ansible
 
-      - name: Configure SSH known_hosts
+      - name: Disable SSH host key checking for Ansible
+        run: |
+          echo "[defaults]" > ansible.cfg
+          echo "host_key_checking = False" >> ansible.cfg
+          cat ansible.cfg
+
+      - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
           ssh-keyscan -p 62221 -H ${{ inputs.host }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Set Ansible host key checking off
-        run: |
-          echo "export ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
-
       - name: Test SSH connection
         run: |
-          ssh -i ~/.ssh/id_rsa -p 62221 -o StrictHostKeyChecking=no student@${{ inputs.host }} "echo SSH_OK"
+          ssh -o StrictHostKeyChecking=no -p 62221 student@${{ inputs.host }} "echo SSH_OK"
 
       - name: Run Ansible Playbook
         run: |
