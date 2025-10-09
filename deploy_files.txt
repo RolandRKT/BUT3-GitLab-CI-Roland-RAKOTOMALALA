@@ -1,5 +1,4 @@
 name: Deploy App
-
 on:
   workflow_call:
     inputs:
@@ -12,27 +11,43 @@ on:
       app_directory:
         required: true
         type: string
-      ssh_key_secret:
+    secrets:
+      SSH_KEY:
         required: true
-        type: string
+      PASSWORD:
+        required: true
+      ADRESSE:
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: webfactory/ssh-agent@v0.9.0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets[inputs.ssh_key_secret] }}
-      - run: |
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Install Ansible
+        run: |
           sudo apt update && sudo apt install -y ansible
-      - run: |
+
+      - name: Add host to known_hosts
+        run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p 62221 ${{ inputs.host }} >> ~/.ssh/known_hosts
-      - run: |
+
+      - name: Run Ansible Playbook
+        run: |
           cd ansible
-          ansible-playbook -i inventory.ini deploy.yml \
-            --extra-vars "env=${{ inputs.env }} image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }} app_directory=${{ inputs.app_directory }}"
+          ansible-playbook -i inventory.ini deploy.yml --extra-vars "env=${{ inputs.env }} \
+                          image_tag=${{ github.sha }} \
+                          registry=${{ secrets.ADRESSE }} \
+                          registry_password=${{ secrets.PASSWORD }} \
+                          app_directory=${{ inputs.app_directory }}"
 name: Build & Push Docker Images
 
 on:
@@ -92,7 +107,11 @@ jobs:
       env: dev
       host: dev21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-dev
-      ssh_key_secret: SSH_KEY
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      ADRESSE: ${{ secrets.ADRESSE }}
+
 
   deploy-test:
     needs: [build-frontend, build-backend]
@@ -101,7 +120,10 @@ jobs:
       env: test
       host: test21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland-test
-      ssh_key_secret: SSH_KEY
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      ADRESSE: ${{ secrets.ADRESSE }}
 
   deploy-prod:
     needs: [build-frontend, build-backend]
@@ -110,7 +132,10 @@ jobs:
       env: prod
       host: prod21.iut.arcanit.io
       app_directory: /home/student/apps/rakotomalala_roland
-      ssh_key_secret: SSH_KEY- name: Déployer l'application selon l'environnement
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      ADRESSE: ${{ secrets.ADRESSE }}- name: Déployer l'application selon l'environnement
   hosts: apps
   vars:
     env_prefix: "{{ 'dev-' if env=='dev' else ('test-' if env=='test' else '') }}"
@@ -127,7 +152,7 @@ jobs:
         dest: "{{ app_directory }}/docker-compose.yml"
 
     - name: Lancer docker-compose
-      community.docker.docker_compose:
+      community.docker.docker_compose_v2:
         project_src: "{{ app_directory }}"
         state: present
 ASPNETCORE_ENVIRONMENT={{ env }}

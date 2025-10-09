@@ -35,15 +35,26 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y ansible
 
-      - name: Add host to known_hosts
+      - name: Configure SSH known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p 62221 ${{ inputs.host }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          ssh-keyscan -p 62221 -H ${{ inputs.host }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Set Ansible host key checking off
+        run: |
+          echo "export ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
+
+      - name: Test SSH connection
+        run: |
+          ssh -i ~/.ssh/id_rsa -p 62221 -o StrictHostKeyChecking=no student@${{ inputs.host }} "echo SSH_OK"
 
       - name: Run Ansible Playbook
         run: |
           cd ansible
-          ansible-playbook -i inventory.ini deploy.yml --extra-vars "env=${{ inputs.env }} \
+          ansible-playbook -i inventory.ini deploy.yml \
+            --extra-vars "env=${{ inputs.env }} \
                           image_tag=${{ github.sha }} \
                           registry=${{ secrets.ADRESSE }} \
                           registry_password=${{ secrets.PASSWORD }} \
