@@ -51,6 +51,12 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -p 62221 student@${{ inputs.host }} "echo SSH_OK"
 
+      - name: Create dynamic inventory
+        run: |
+          cat > ansible/inventory.ini << EOF[apps]
+          target_host ansible_host=${{ inputs.host }} ansible_port=${{ inputs.ssh_port }} ansible_user=student ansible_become=no
+          EOF
+
       - name: Run Ansible Playbook
         run: |
           cd ansible
