@@ -1,3 +1,5 @@
+# apps.yml
+
 app_directory: /home/student/apps/rakotomalala_roland-dev
 
 registry: docker.iut.arcanit.io
@@ -5,3 +7,15 @@ registry_login: admin
 registry_password: secret
 
 image_tag: latest
+
+# ➕ Variables pour la gestion des environnements (dont PR)
+vars:
+  pr_number: "{{ lookup('env', 'PR_NUMBER') | default('') }}"
+  prenom: "{{ lookup('env', 'PRENOM') | default('roland') }}"
+  nom: "{{ lookup('env', 'NOM') | default('rakotomalala') }}"
+  env_prefix: >-
+    {% if env == 'dev' %}dev-
+    {% elif env == 'test' %}test-
+    {% elif env == 'pr' %}pr-{{ pr_number }}-
+    {% elif env == 'prod' %}{% endif %}
+  domain_prefix: "{{ env_prefix }}"
