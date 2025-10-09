@@ -4,16 +4,11 @@ on:
   push:
     branches:
       - main
-  pull_request:        # 👈 nécessaire pour déclencher le job sur les PR
+  pull_request:
     branches:
       - main
 
 jobs:
-  build-frontend:
-    # ... ton job frontend
-
-  build-backend:
-    # ... ton job backend
 
   deploy-dev:
     needs: [build-frontend, build-backend]
