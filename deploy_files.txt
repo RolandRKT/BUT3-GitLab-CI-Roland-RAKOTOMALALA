@@ -1,0 +1,209 @@
+name: Deploy App
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      host:
+        required: true
+        type: string
+      app_directory:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - run: |
+          sudo apt update && sudo apt install -y ansible
+      - run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 62221 ${{ inputs.host }} >> ~/.ssh/known_hosts
+      - run: |
+          cd ansible
+          ansible-playbook -i inventory.ini deploy.yml \
+            --extra-vars "env=${{ inputs.env }} image_tag=${{ github.sha }} registry_password=${{ secrets.PASSWORD }} app_directory=${{ inputs.app_directory }}"
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+ 
+jobs:
+  build-frontend:
+    name: Build & Push Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ADRESSE }}
+          username: ${{ secrets.LOGIN }}
+          password: ${{ secrets.PASSWORD }}
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/web.dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ADRESSE }}/rakotomalala-roland-frontend:latest
+            ${{ secrets.ADRESSE }}/rakotomalala-roland-frontend:${{ github.sha }}
+
+  build-backend:
+    name: Build & Push Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ADRESSE }}
+          username: ${{ secrets.LOGIN }}
+          password: ${{ secrets.PASSWORD }}
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/api.dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ADRESSE }}/rakotomalala-roland-backend:latest
+            ${{ secrets.ADRESSE }}/rakotomalala-roland-backend:${{ github.sha }}
+
+  deploy-dev:
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: dev
+      host: dev21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland-dev
+
+  deploy-test:
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: test
+      host: test21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland-test
+
+  deploy-prod:
+    needs: [build-frontend, build-backend]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: prod
+      host: prod21.iut.arcanit.io
+      app_directory: /home/student/apps/rakotomalala_roland
+- name: Déployer l'application selon l'environnement
+  hosts: apps
+  vars:
+    env_prefix: "{{ 'dev-' if env=='dev' else ('test-' if env=='test' else '') }}"
+    domain_prefix: "{{ env_prefix }}"
+  tasks:
+    - name: Générer backend.env depuis le template
+      template:
+        src: templates/backend.env.j2
+        dest: "{{ app_directory }}/backend.env"
+
+    - name: Générer docker-compose.yml depuis le template
+      template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ app_directory }}/docker-compose.yml"
+
+    - name: Lancer docker-compose
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: present
+ASPNETCORE_ENVIRONMENT={{ env }}
+ASPNETCORE_URLS=http://+:80
+FIRST_NAME=Roland
+LAST_NAME=RAKOTOMALALA
+version: '3.8'
+services:
+  roland-rakotomalala-frontend:
+    image: {{ registry }}/rakotomalala-roland-frontend:{{ image_tag }}
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.rule=Host(`{{ domain_prefix }}roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.entrypoints=https"
+      - "traefik.http.routers.{{ env_prefix }}roland-rakotomalala-frontend.tls=true"
+      - "traefik.http.services.{{ env_prefix }}roland-rakotomalala-frontend.loadbalancer.server.port=80"
+
+  roland-rakotomalala-backend:
+    image: {{ registry }}/rakotomalala-roland-backend:{{ image_tag }}
+    env_file: backend.env
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.rule=Host(`{{ domain_prefix }}api-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.entrypoints=https"
+      - "traefik.http.routers.{{ env_prefix }}api-roland-rakotomalala.tls=true"
+      - "traefik.http.services.{{ env_prefix }}api-roland-rakotomalala.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true
+app_directory: /home/student/apps/rakotomalala_roland-dev
+
+registry: docker.iut.arcanit.io
+registry_login: admin
+registry_password: secret
+
+image_tag: latest
+[apps]
+dev21 ansible_host=dev21.iut.arcanit.io ansible_user=student ansible_port=62221
+ASPNETCORE_ENVIRONMENT=dev
+ASPNETCORE_URLS=http://+:80
+FIRST_NAME=Roland
+LAST_NAME=RAKOTOMALALAversion: '3.8'
+
+services:
+  roland-rakotomalala-frontend:
+    container_name: roland-rakotomalala-frontend
+    image: docker.iut.arcanit.io/rakotomalala-roland-frontend:${IMAGE_TAG}  # IMAGE_TAG = sha256 du commit
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.rule=Host(`dev-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.entrypoints=https"
+      - "traefik.http.routers.dev-roland-rakotomalala-frontend.tls=true"
+      - "traefik.http.services.dev-roland-rakotomalala-frontend.loadbalancer.server.port=80"
+
+  roland-rakotomalala-backend:
+    container_name: roland-rakotomalala-backend
+    image: docker.iut.arcanit.io/rakotomalala-roland-backend:${IMAGE_TAG}  # IMAGE_TAG = sha256 du commit
+    env_file:
+      - backend.env
+    restart: always
+    networks: [traefik]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.rule=Host(`dev-api-roland-rakotomalala.iut.arcanit.io`)"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.entrypoints=https"
+      - "traefik.http.routers.dev-api-roland-rakotomalala.tls=true"
+      - "traefik.http.services.dev-api-roland-rakotomalala.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true
+export class Constants {
+    public static readonly API_BASE_URL = "https://dev-api-roland-rakotomalala.iut.arcanit.io";
+    public static readonly FIRSTNAME = "Roland";
+    public static readonly LASTNAME = "Rakotomalala";
+}
