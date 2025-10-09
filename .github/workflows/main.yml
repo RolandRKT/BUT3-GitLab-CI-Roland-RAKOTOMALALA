@@ -1,10 +1,13 @@
-name: Build & Push Docker Images
+name: Build & Deploy Docker Images
 
 on:
   push:
     branches:
       - main
- 
+  pull_request:
+    branches:
+      - main
+
 jobs:
   build-frontend:
     name: Build & Push Frontend
@@ -12,12 +15,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Log in to Docker Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ADRESSE }}
           username: ${{ secrets.LOGIN }}
           password: ${{ secrets.PASSWORD }}
+
       - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
         with:
@@ -34,12 +39,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Log in to Docker Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ADRESSE }}
           username: ${{ secrets.LOGIN }}
           password: ${{ secrets.PASSWORD }}
+
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v6
         with:
@@ -98,3 +105,7 @@ jobs:
       SSH_KEY: ${{ secrets.SSH_KEY }}
       PASSWORD: ${{ secrets.PASSWORD }}
       ADRESSE: ${{ secrets.ADRESSE }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PRENOM: roland
+      NOM: rakotomalala
